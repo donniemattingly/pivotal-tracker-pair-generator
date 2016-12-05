@@ -71,5 +71,6 @@
   one person alone) where no person is paired with the last person they 
   paired with"
   [active-stories pairable-members]
-  
-  )
+  (let [current-pairs (get-current-pairs active-stories pairable-members)]
+    (let [orphaned-pairs (set (map rand-nth current-pairs))]
+         orphaned-pairs)))
