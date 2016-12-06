@@ -72,5 +72,6 @@
   paired with"
   [active-stories pairable-members]
   (let [current-pairs (get-current-pairs active-stories pairable-members)]
-    (let [orphaned-pairs (set (map rand-nth current-pairs))]
-         orphaned-pairs)))
+    (let [anchor-pairs (set (map rand-nth current-pairs))
+          orphaned-pairs (set (remove anchor-pairs (set pairable-members)))]
+      [anchor-pairs  orphaned-pairs])))
