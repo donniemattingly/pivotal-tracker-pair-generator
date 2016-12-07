@@ -26,14 +26,18 @@
                                 (select-keys (get member "person") ["name" "id" "initials"])) 
                               (parse-string
                                (:body (client/get
-                                       (str "https://www.pivotaltracker.com/services/v5/projects/" project-id "/memberships")
+                                       (str "https://www.pivotaltracker.com/services/v5/projects/"
+                                            project-id 
+                                            "/memberships")
                                        {:headers {"X-TrackerToken" token}}))))))
 
 (defn get-active-stories
   [token project-id]
   (map walk/keywordize-keys (parse-string
                              (:body (client/get
-                                     (str "https://www.pivotaltracker.com/services/v5/projects/" project-id "/stories?filter=state:started")
+                                     (str "https://www.pivotaltracker.com/services/v5/projects/" 
+                                          project-id 
+                                          "/stories?filter=state:started")
                                      {:headers {"X-TrackerToken" token}})))))
 
 (defn filter-stories-with-label
@@ -63,7 +67,8 @@
 
 (defn get-current-pairs
   [active-stories project-members]
-  (map (partial get-members-for-story project-members) active-stories))
+  (set (map (partial get-members-for-story project-members) active-stories)))
+
 
 (defn get-new-pairs
   "Takes a list of currently being worked stories and a list of project
@@ -72,6 +77,17 @@
   paired with"
   [active-stories pairable-members]
   (let [current-pairs (get-current-pairs active-stories pairable-members)]
-    (let [anchor-pairs (set (map rand-nth current-pairs))
-          orphaned-pairs (set (remove anchor-pairs (set pairable-members)))]
-      [anchor-pairs  orphaned-pairs])))
+    (let [pair-set (set pairable-members)]
+      (loop [anchors (set (take (/ (count pair-set) 2) (shuffle pair-set)))
+            orphans (set (remove anchors pair-set))
+             pairs []]
+        (if (every? empty? [anchors orphans])
+          pairs
+          (let [new-pair [(first anchors) (first orphans)]]
+            (if (current-pairs new-pair)
+              (recur (shuffle anchors) (shuffle orphans) pairs)
+              (recur (rest anchors) (rest orphans) (conj pairs new-pair)))))))))
+
+;; (def token "token-goes-here")
+;; (def active-stories (get-active-stories token project-id))
+;; (def active-members (get-active-members token project-id))
