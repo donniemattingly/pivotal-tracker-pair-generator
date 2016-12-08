@@ -10,6 +10,8 @@
             [ring.middleware.reload :refer [wrap-reload]]
             [environ.core :refer [env]]))
 
+(def token (env :tracker-token))
+(def project-id (env :tracker-project-id))
 
 (defn get-project-members
   [token project-id]
@@ -24,14 +26,15 @@
                                         :insecure true}))))))
 
 (defn get-active-stories
-  [token project-id]
-  (map walk/keywordize-keys (parse-string
-                             (:body (client/get
-                                     (str "https://www.pivotaltracker.com/services/v5/projects/" 
-                                          project-id 
-                                          "/stories?filter=state:started")
-                                     {:headers {"X-TrackerToken" token}
-                                      :insecure true})))))
+  ([] (get-active-stories token project-id))
+  ([token project-id]
+   (map walk/keywordize-keys (parse-string
+                              (:body (client/get
+                                      (str "https://www.pivotaltracker.com/services/v5/projects/" 
+                                           project-id 
+                                           "/stories?filter=state:started")
+                                      {:headers {"X-TrackerToken" token}
+                                       :insecure true}))))))
 
 (defn filter-stories-with-label
   [stories label]
@@ -46,6 +49,7 @@
           project-members))
 
 (defn get-active-members
+  ([] (get-active-members token project-id))
   ([token project-id] (get-active-members token project-id (get-active-stories token project-id)))
   ([token project-id active-stories]
    (let [project-members (get-project-members token project-id)]
@@ -81,12 +85,12 @@
               (recur (shuffle anchors) (shuffle orphans) pairs)
               (recur (rest anchors) (rest orphans) (conj pairs new-pair)))))))))
 
-(def active-stories (get-active-stories token project-id))
-(def active-members (get-active-members token project-id))
 
 
 (defroutes app-routes
   (GET "/" [] "Hello World")
+  (GET "/env" []
+       (generate-string {:token (env :tracker-token) :project-id (env :tracker-project-id)}))
   (GET "/members" [] 
        {:status 200 :headers {"Content-Type" "application/json"} 
         :body (generate-string (get-project-members token project-id))})
@@ -99,11 +103,11 @@
   (GET "/pairs/current" []
        {:status 200 :headers {"Content-Type" "application/json"}
         :body (generate-string (get-current-pairs 
-                                (get-active-stories token project-id)
-                                (get-active-members token project-id)))})
+                                (get-active-stories)
+                                (get-active-members)))})
   (GET "/pairs/new" []
-       {:status 200 :headers {"Content-Type" "application/json"}
-        :body (generate-string (get-new-pairs active-stories active-members))})
+         {:status 200 :headers {"Content-Type" "application/json"}
+          :body (generate-string (get-new-pairs (get-active-stories) (get-active-members)))})
   (route/not-found "Not Found"))
 
 (def app
