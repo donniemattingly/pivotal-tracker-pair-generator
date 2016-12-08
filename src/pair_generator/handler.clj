@@ -80,7 +80,6 @@
               (recur (rest anchors) (rest orphans) (conj pairs new-pair)))))))))
 
 (def token "token-goes-here")
-(def token "1123809dca417d8f95ca3bf8783eea56")
 ;; (def active-stories (get-active-stories token project-id))
 ;; (def active-members (get-active-members token project-id))
 
