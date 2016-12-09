@@ -11,7 +11,8 @@
                  [clj-http "2.3.0"]
                  [cheshire "5.6.3"]
                  [environ "1.1.0"]]
-  :plugins [[lein-ring "0.9.7"]]
+  :plugins [[lein-ring "0.9.7"]
+            [lein-environ "1.1.0"]]
   :ring {:handler pair-generator.handler/app}
   :target-path "target/%s"
   :profiles

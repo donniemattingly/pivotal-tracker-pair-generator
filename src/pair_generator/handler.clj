@@ -82,7 +82,9 @@
           pairs
           (let [new-pair [(first anchors) (first orphans)]]
             (if (current-pairs new-pair)
-              (recur (shuffle anchors) (shuffle orphans) pairs)
+              (if (or (= 1 (count anchors)) (= 1 (count orphans)))
+                (conj pairs new-pair)
+                (recur (shuffle anchors) (shuffle orphans) pairs))
               (recur (rest anchors) (rest orphans) (conj pairs new-pair)))))))))
 
 
