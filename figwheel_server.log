@@ -1,0 +1,6 @@
+Figwheel: focusing on build-ids (pair-generator)
+[0mCompiling "resources/public/js/app.js" from ["src/cljs"]...
+[32mSuccessfully compiled "resources/public/js/app.js" in 0.176 seconds.[0m
+notifying browser that file changed:  resources/public/js/out/goog/deps.js
+notifying browser that file changed:  resources/public/js/out/cljs_deps.js
+notifying browser that file changed:  /pair_generator/app.js

@@ -1,13 +1,16 @@
 (ns pair-generator.handler
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
-            [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
             [org.httpkit.server :refer [run-server]]
             [clj-http.client :as client]
             [clojure.pprint :as pprint]
             [cheshire.core :refer :all]
             [clojure.walk :as walk]
             [ring.middleware.reload :refer [wrap-reload]]
+            [ring.util.response :refer [resource-response response]]
+            [ring.middleware.json :as middleware]
+            [ring.middleware.defaults :refer [wrap-defaults api-defaults]]
+            [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [environ.core :refer [env]]))
 
 (def token (env :tracker-token))
@@ -90,27 +93,31 @@
 
 
 (defroutes app-routes
-  (GET "/" [] "Hello World")
+  (GET "/" [] (resource-response "index.html" {:root "public"}))
+  
+  (route/resources "/")
+
   (GET "/env" []
        (generate-string {:token (env :tracker-token) :project-id (env :tracker-project-id)}))
   (GET "/members" [] 
-       {:status 200 :headers {"Content-Type" "application/json"} 
-        :body (generate-string (get-project-members token project-id))})
+       (response (get-project-members token project-id)))
   (GET "/members/active" [] 
-       {:status 200 :headers {"Content-Type" "application/json"} 
-        :body (generate-string (get-active-members token project-id))})
+       (response (generate-string (get-active-members token project-id))))
   (GET "/stories/active" []
-       {:status 200 :headers {"Content-Type" "application/json"}
-        :body (generate-string (get-active-stories token project-id))})
+       (response (get-active-stories token project-id)))
   (GET "/pairs/current" []
-       {:status 200 :headers {"Content-Type" "application/json"}
-        :body (generate-string (get-current-pairs 
-                                (get-active-stories)
-                                (get-active-members)))})
+       (response (generate-string (get-current-pairs 
+                                  (get-active-stories)
+                                  (get-active-members)))))
   (GET "/pairs/new" []
-         {:status 200 :headers {"Content-Type" "application/json"}
-          :body (generate-string (get-new-pairs (get-active-stories) (get-active-members)))})
+       (response (generate-string (get-new-pairs (get-active-stories) (get-active-members)))))
+
   (route/not-found "Not Found"))
 
 (def app
-  (wrap-reload (wrap-defaults app-routes site-defaults)))
+  (-> app-routes
+      (wrap-reload)
+      (wrap-keyword-params)
+      (middleware/wrap-json-body)
+      (middleware/wrap-json-response)
+      (wrap-defaults api-defaults)))
